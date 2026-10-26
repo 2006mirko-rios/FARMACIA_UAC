@@ -19,7 +19,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users');
             $table->enum('tipo', ['entrada', 'salida']);
             $table->unsignedInteger('cantidad');
-            $table->string('motivo', 200);
+            $table->string('motivo');
             $table->timestamps();
         });
     }

@@ -1,0 +1,776 @@
+{
+  "info": {
+    "_postman_id": "6f1d7c2a-8f6e-4b4f-9c2a-4d8b0e4c1a77",
+    "name": "Farmacia UAC - API",
+    "description": "Pruebas de los endpoints REST de Farmacia UAC.\n\nRequisitos:\n- Ejecutar `php artisan serve`.\n- Base de datos migrada.\n- Configurar `userId` con un usuario existente y `categoriaId` con una categoría que tenga al menos un producto.\n- Todas las peticiones envían `Accept: application/json` mediante un script de pre-request y la cabecera explícita.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 - Productos",
+      "item": [
+        {
+          "name": "Listar productos - 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('Estado es 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Devuelve paginación de 10', function () {",
+                  "    pm.expect(body.data).to.be.an('array');",
+                  "    pm.expect(body.meta.per_page).to.eql(10);",
+                  "});",
+                  "",
+                  "pm.test('Oculta auditorías y campos internos', function () {",
+                  "    if (body.data.length === 0) {",
+                  "        return;",
+                  "    }",
+                  "",
+                  "    pm.expect(body.data[0]).to.not.have.property('deleted_at');",
+                  "    pm.expect(body.data[0]).to.not.have.property('created_at');",
+                  "    pm.expect(body.data[0]).to.not.have.property('updated_at');",
+                  "    pm.expect(body.data[0]).to.not.have.property('stock_minimo');",
+                  "    pm.expect(body.data[0].categoria).to.not.have.property('created_at');",
+                  "});",
+                  "",
+                  "if (body.data.length > 0) {",
+                  "    pm.collectionVariables.set('productoId', body.data[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/productos"
+          }
+        },
+        {
+          "name": "Crear producto - 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('Estado es 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('No expone datos sensibles', function () {",
+                  "    pm.expect(body.data).to.not.have.property('deleted_at');",
+                  "    pm.expect(body.data).to.not.have.property('created_at');",
+                  "    pm.expect(body.data).to.not.have.property('updated_at');",
+                  "    pm.expect(body.data).to.not.have.property('stock_minimo');",
+                  "});",
+                  "",
+                  "pm.test('Formatea el precio y la categoría', function () {",
+                  "    pm.expect(body.data.precio).to.be.a('number');",
+                  "    pm.expect(body.data.categoria).to.have.property('id');",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set('productoId', body.data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigo\": \"P{{$timestamp}}\",\n  \"nombre\": \"Producto Postman {{$timestamp}}\",\n  \"precio_venta\": 10.5,\n  \"stock_minimo\": 5,\n  \"categoria_id\": {{categoriaId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/productos"
+          }
+        },
+        {
+          "name": "Obtener producto - 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('Estado es 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Usa Route Model Binding', function () {",
+                  "    pm.expect(String(body.data.id)).to.eql(String(pm.collectionVariables.get('productoId')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/productos/{{productoId}}"
+          }
+        },
+        {
+          "name": "Actualizar producto - 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('Estado es 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Actualiza sin falsos positivos de código único', function () {",
+                  "    pm.expect(body.data.nombre).to.include('Producto actualizado');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Producto actualizado {{$timestamp}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/productos/{{productoId}}"
+          }
+        },
+        {
+          "name": "Producto inexistente - 404 JSON",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado es 404 Not Found', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Error JSON en lugar de HTML', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "    pm.expect(pm.response.json()).to.have.property('message');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/productos/{{productoInexistenteId}}"
+          }
+        },
+        {
+          "name": "Validación inválida - 422 JSON",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('Estado es 422 Unprocessable Content', function () {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "",
+                  "pm.test('Detalla los campos inválidos', function () {",
+                  "    pm.expect(body.errors).to.have.all.keys('codigo', 'nombre', 'precio_venta', 'stock_minimo', 'categoria_id');",
+                  "});",
+                  "",
+                  "pm.test('El controlador no se ejecuta', function () {",
+                  "    pm.expect(body).to.not.have.property('data');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigo\": \"\",\n  \"nombre\": \"\",\n  \"precio_venta\": -1,\n  \"stock_minimo\": -5,\n  \"categoria_id\": 999999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/productos"
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Almacenes",
+      "item": [
+        {
+          "name": "Listar almacenes - 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado es 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Devuelve listado paginado', function () {",
+                  "    pm.expect(pm.response.json().data).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/almacenes"
+          }
+        },
+        {
+          "name": "Crear almacén - 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const data = body.data ? body.data : body;",
+                  "",
+                  "pm.test('Estado es 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set('almacenId', data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Almacén Postman {{$timestamp}}\",\n  \"ubicacion\": \"Piso 1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/almacenes"
+          }
+        },
+        {
+          "name": "Obtener almacén - 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const data = body.data ? body.data : body;",
+                  "",
+                  "pm.test('Estado es 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Parámetro singular {almacen}', function () {",
+                  "    pm.expect(String(data.id)).to.eql(String(pm.collectionVariables.get('almacenId')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/almacenes/{{almacenId}}"
+          }
+        },
+        {
+          "name": "Almacén inexistente - 404 JSON",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado es 404 Not Found', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Error JSON en lugar de HTML', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "    pm.expect(pm.response.json()).to.have.property('message');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/almacenes/{{almacenInexistenteId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Movimientos",
+      "item": [
+        {
+          "name": "Crear movimiento - 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const data = body.data ? body.data : body;",
+                  "",
+                  "pm.test('Estado es 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Registra entrada o salida', function () {",
+                  "    pm.expect(['entrada', 'salida']).to.include(data.tipo);",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set('movimientoId', data.id);",
+                  "pm.collectionVariables.set('movimientoMotivo', data.motivo);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"producto_id\": {{productoId}},\n  \"almacen_id\": {{almacenId}},\n  \"proveedor_id\": null,\n  \"user_id\": {{userId}},\n  \"tipo\": \"entrada\",\n  \"cantidad\": 5,\n  \"motivo\": \"Prueba Postman {{$timestamp}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/movimientos"
+          }
+        },
+        {
+          "name": "Doble clic - 409 Conflict",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado es 409 Conflict', function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "",
+                  "pm.test('Bloquea el doble clic', function () {",
+                  "    pm.expect(pm.response.json().message).to.include('duplicado');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"producto_id\": {{productoId}},\n  \"almacen_id\": {{almacenId}},\n  \"proveedor_id\": null,\n  \"user_id\": {{userId}},\n  \"tipo\": \"entrada\",\n  \"cantidad\": 5,\n  \"motivo\": \"{{movimientoMotivo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/movimientos"
+          }
+        },
+        {
+          "name": "Listar movimientos - 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado es 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Devuelve listado paginado', function () {",
+                  "    pm.expect(pm.response.json().data).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/movimientos"
+          }
+        },
+        {
+          "name": "Eliminar movimiento - 204",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado es 204 No Content', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/movimientos/{{movimientoId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Categorías",
+      "item": [
+        {
+          "name": "Eliminar categoría con productos - 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado es 409 Conflict', function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "",
+                  "pm.test('Protege la integridad referencial', function () {",
+                  "    pm.expect(pm.response.json().message).to.include('categoría');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/categorias/{{categoriaId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Limpieza",
+      "item": [
+        {
+          "name": "Eliminar producto - 204",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado es 204 No Content', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/productos/{{productoId}}"
+          }
+        },
+        {
+          "name": "Eliminar almacén - 204",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado es 204 No Content', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/almacenes/{{almacenId}}"
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.request.headers.upsert({ key: 'Accept', value: 'application/json' });"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test('Accept: application/json en cada petición', function () {",
+          "    pm.expect(pm.request.headers.get('Accept')).to.eql('application/json');",
+          "});",
+          "",
+          "if (pm.response.code !== 204) {",
+          "    pm.test('La respuesta es JSON', function () {",
+          "        pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+          "    });",
+          "",
+          "    pm.test('No expone campos sensibles', function () {",
+          "        const body = pm.response.json();",
+          "        const payload = body && Object.prototype.hasOwnProperty.call(body, 'data') ? body.data : body;",
+          "        const records = Array.isArray(payload) ? payload : [payload];",
+          "",
+          "        records.forEach(function (record) {",
+          "            if (!record || typeof record !== 'object') {",
+          "                return;",
+          "            }",
+          "",
+          "            pm.expect(record).to.not.have.property('deleted_at');",
+          "        });",
+          "    });",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8000/api",
+      "type": "string"
+    },
+    {
+      "key": "categoriaId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "productoInexistenteId",
+      "value": "999999",
+      "type": "string"
+    },
+    {
+      "key": "almacenInexistenteId",
+      "value": "999999",
+      "type": "string"
+    },
+    {
+      "key": "productoId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "almacenId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "movimientoId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "movimientoMotivo",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

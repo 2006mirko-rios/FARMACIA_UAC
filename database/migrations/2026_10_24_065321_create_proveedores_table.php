@@ -11,13 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('productos', function (Blueprint $table) {
+        Schema::create('proveedores', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('categoria_ID')->constrained('categorias')->restrictOnDelete();
-            $table->string('codigo', 20)->unique();
-            $table->string('nombre', 150);
-            $table->decimal('precio', 10, 2);
-            $table->unsignedInteger('stock_minimo')->default(0);
+            $table->string('ruc', 11)->unique();
+            $table->string('razon_social', 150);
             $table->timestamps();
         });
     }
@@ -27,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('productos');
+        Schema::dropIfExists('proveedores');
     }
 };
